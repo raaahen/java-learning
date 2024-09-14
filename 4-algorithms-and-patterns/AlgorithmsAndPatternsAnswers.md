@@ -1234,3 +1234,459 @@ public class TemplateMethodPatternDemo {
 ### Недостатки:
 - **Связь с суперклассом**: Изменения в базовом классе могут затронуть всех наследников.
 - **Ограниченная гибкость**: Шаги, которые не являются изменяемыми, трудно адаптировать под конкретные требования.
+
+# 14. Паттерн Цепочка обязанностей (Chain of Responsibility)
+
+**Цепочка обязанностей** (Chain of Responsibility) — это поведенческий паттерн, который позволяет передавать запрос по цепочке обработчиков. Каждый обработчик сам решает, может ли он обработать запрос, или передать его дальше по цепочке.
+
+## Применение паттерна
+
+Паттерн используется, когда:
+- Имеется набор объектов-обработчиков, каждый из которых может обработать запрос или передать его следующему.
+- Необходимо разделить логику обработки запроса между разными объектами без жесткого связывания отправителя и получателя запроса.
+
+### Пример использования паттерна Chain of Responsibility
+
+Рассмотрим пример системы обработки жалоб. Жалобы могут быть разными (например, простые запросы, серьезные жалобы или критические вопросы), и каждый уровень менеджмента обрабатывает их на разных этапах.
+
+```java
+// Абстрактный класс для обработчиков
+abstract class ComplaintHandler {
+    protected ComplaintHandler nextHandler;
+
+    public void setNextHandler(ComplaintHandler nextHandler) {
+        this.nextHandler = nextHandler;
+    }
+
+    // Шаблонный метод для обработки запроса
+    public void handleComplaint(String complaint, int severity) {
+        if (canHandle(severity)) {
+            handle(complaint);
+        } else if (nextHandler != null) {
+            nextHandler.handleComplaint(complaint, severity);
+        }
+    }
+
+    // Метод для проверки возможности обработки
+    protected abstract boolean canHandle(int severity);
+    
+    // Метод для непосредственной обработки
+    protected abstract void handle(String complaint);
+}
+
+// Обработчик для простых жалоб
+class BasicComplaintHandler extends ComplaintHandler {
+    @Override
+    protected boolean canHandle(int severity) {
+        return severity <= 2; // Обрабатываем простые жалобы
+    }
+
+    @Override
+    protected void handle(String complaint) {
+        System.out.println("Basic Complaint Handler: Обрабатываю простую жалобу - " + complaint);
+    }
+}
+
+// Обработчик для серьезных жалоб
+class SeriousComplaintHandler extends ComplaintHandler {
+    @Override
+    protected boolean canHandle(int severity) {
+        return severity <= 5; // Обрабатываем серьезные жалобы
+    }
+
+    @Override
+    protected void handle(String complaint) {
+        System.out.println("Serious Complaint Handler: Обрабатываю серьезную жалобу - " + complaint);
+    }
+}
+
+// Обработчик для критических жалоб
+class CriticalComplaintHandler extends ComplaintHandler {
+    @Override
+    protected boolean canHandle(int severity) {
+        return severity > 5; // Обрабатываем только критические жалобы
+    }
+
+    @Override
+    protected void handle(String complaint) {
+        System.out.println("Critical Complaint Handler: Обрабатываю критическую жалобу - " + complaint);
+    }
+}
+
+// Пример использования паттерна Chain of Responsibility
+public class ChainOfResponsibilityPatternDemo {
+    public static void main(String[] args) {
+        // Создаем цепочку обработчиков
+        ComplaintHandler basicHandler = new BasicComplaintHandler();
+        ComplaintHandler seriousHandler = new SeriousComplaintHandler();
+        ComplaintHandler criticalHandler = new CriticalComplaintHandler();
+
+        // Устанавливаем цепочку
+        basicHandler.setNextHandler(seriousHandler);
+        seriousHandler.setNextHandler(criticalHandler);
+
+        // Тестируем разные жалобы
+        basicHandler.handleComplaint("Запрос на дополнительную информацию", 1);
+        basicHandler.handleComplaint("Проблема с качеством", 4);
+        basicHandler.handleComplaint("Серьезный сбой в системе", 8);
+    }
+}
+```
+
+### Ожидаемый вывод:
+
+```
+Basic Complaint Handler: Обрабатываю простую жалобу - Запрос на дополнительную информацию
+Serious Complaint Handler: Обрабатываю серьезную жалобу - Проблема с качеством
+Critical Complaint Handler: Обрабатываю критическую жалобу - Серьезный сбой в системе
+```
+
+### Объяснение:
+
+1. **ComplaintHandler** — абстрактный класс, определяющий шаблон обработки жалоб. У каждого обработчика есть ссылка на следующий обработчик в цепочке.
+2. **BasicComplaintHandler**, **SeriousComplaintHandler**, **CriticalComplaintHandler** — конкретные обработчики, каждый из которых может обрабатывать запросы разного уровня сложности.
+3. При вызове метода `handleComplaint()`, обработчик проверяет, может ли он сам обработать жалобу. Если нет, запрос передается следующему обработчику в цепочке.
+
+## Преимущества и недостатки
+
+### Преимущества:
+- **Ослабление связи** между отправителем запроса и его обработчиком.
+- **Гибкость в добавлении новых обработчиков** без изменения существующего кода.
+- **Цепочка может динамически изменяться**, в зависимости от условий.
+
+### Недостатки:
+- **Неопределенность обработки**: запрос может "провалиться" через цепочку, если никто не обработает его.
+- **Отладка может быть сложнее**, особенно при длинных цепочках.
+
+Паттерн **Цепочка обязанностей** хорошо подходит для сценариев, где разные уровни системы обрабатывают запросы постепенно или в зависимости от контекста.
+
+# 15. Паттерны, используемые в Spring Framework
+
+Spring Framework активно использует несколько известных шаблонов проектирования для обеспечения гибкости, инверсии управления, управления зависимостями и других аспектов работы с объектами и их взаимодействием.
+
+## 1. **Dependency Injection (Внедрение зависимостей)**
+
+- Это основной паттерн, на котором построен Spring. Вместо того, чтобы объект создавал свои зависимости, они внедряются извне (например, через конструкторы или сеттеры).
+- Spring использует **Inversion of Control (IoC)** контейнер, который управляет жизненным циклом объектов и их зависимостями.
+
+Пример:
+
+```java
+@Component
+public class UserService {
+    private final UserRepository userRepository;
+
+    @Autowired
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+}
+```
+
+Здесь зависимость `UserRepository` внедряется в `UserService` через конструктор.
+
+## 2. **Singleton (Одиночка)**
+
+- В Spring бины по умолчанию являются **Singleton** — это значит, что для каждого типа бина создается один экземпляр, управляемый контейнером Spring.
+- Если требуется создать несколько экземпляров, можно изменить область видимости (scope) бина на `prototype`.
+
+Пример конфигурации Singleton:
+
+```java
+@Bean
+@Scope("singleton")
+public MyBean myBean() {
+    return new MyBean();
+}
+```
+
+## 3. **Factory Method (Фабричный метод)**
+
+- Spring использует фабричные методы для создания бинов. Вместо непосредственного создания объекта, Spring предоставляет фабричные методы, которые возвращают экземпляр объекта.
+- Это может быть аннотация `@Bean` в конфигурационных классах или XML-конфигурация.
+
+Пример:
+
+```java
+@Configuration
+public class AppConfig {
+    @Bean
+    public MyBean myBean() {
+        return new MyBean();
+    }
+}
+```
+
+## 4. **Proxy (Заместитель)**
+
+- Spring использует паттерн **Proxy** для реализации аспектов (AOP) и транзакционного управления. Прокси-объект оборачивает целевой объект и добавляет дополнительное поведение (например, логирование, безопасность или управление транзакциями).
+- Прокси создается динамически и перехватывает вызовы методов.
+
+Пример прокси в AOP:
+
+```java
+@Aspect
+@Component
+public class LoggingAspect {
+
+    @Before("execution(* com.example.service.*.*(..))")
+    public void logBefore(JoinPoint joinPoint) {
+        System.out.println("Executing: " + joinPoint.getSignature().getName());
+    }
+}
+```
+
+## 5. **Template Method (Шаблонный метод)**
+
+- Этот паттерн используется в классе `JdbcTemplate` и других шаблонных классах Spring (например, `RestTemplate`). Он предоставляет скелет алгоритма, а конкретные шаги делегируются подклассам.
+- `JdbcTemplate` управляет подключением и выполнением SQL-запросов, а пользователи предоставляют конкретные SQL-запросы и обработчики данных.
+
+Пример:
+
+```java
+jdbcTemplate.query("SELECT * FROM users", new RowMapper<User>() {
+    public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+        return new User(rs.getString("name"), rs.getInt("age"));
+    }
+});
+```
+
+## 6. **Observer (Наблюдатель)**
+
+- В Spring паттерн **Observer** реализован через событийную модель с использованием классов `ApplicationEvent` и `ApplicationListener`.
+- Компоненты могут подписываться на события и реагировать на них.
+
+Пример:
+
+```java
+@Component
+public class MyEventListener implements ApplicationListener<MyEvent> {
+    @Override
+    public void onApplicationEvent(MyEvent event) {
+        System.out.println("Received event: " + event.getMessage());
+    }
+}
+```
+
+## 7. **Adapter (Адаптер)**
+
+- В Spring используется паттерн **Adapter** для совместимости различных API. Например, это можно увидеть в абстракциях для работы с `Controller`, где Spring адаптирует HTTP-запросы к методам контроллера.
+
+Пример адаптера в контроллерах:
+
+```java
+@Controller
+public class MyController {
+
+    @RequestMapping("/home")
+    public String home() {
+        return "home";
+    }
+}
+```
+
+## 8. **Decorator (Декоратор)**
+
+- Spring поддерживает паттерн **Decorator** через AOP. Декоратор позволяет оборачивать компоненты в дополнительные слои функциональности, такие как логирование, транзакции или безопасность.
+
+## 9. **Strategy (Стратегия)**
+
+- Паттерн **Strategy** используется в некоторых компонентах Spring, например, в `TaskExecutor` для управления выполнением задач, где можно выбирать различные стратегии выполнения (например, с использованием многопоточности).
+  
+Пример:
+
+```java
+ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+taskExecutor.setCorePoolSize(5);
+taskExecutor.initialize();
+```
+
+## 10. **Composite (Компоновщик)**
+
+- В Spring паттерн **Composite** можно увидеть в реализации `BeanFactory`, который может содержать другие фабрики (иерархия фабрик). Также он используется для составных конфигураций и объединения нескольких бинов.
+
+### Заключение
+
+Spring Framework активно использует различные шаблоны проектирования, чтобы упростить разработку, повысить модульность и гибкость приложений, обеспечивая надежные механизмы работы с зависимостями, транзакциями, событиями и многими другими аспектами.
+
+# 16. Паттерны, используемые в Hibernate
+
+Hibernate, как фреймворк для объектно-реляционного отображения (ORM), также активно использует несколько шаблонов проектирования для эффективной работы с объектами и базами данных.
+
+## 1. **Data Access Object (DAO)**
+
+- **DAO** — это паттерн, используемый для абстракции взаимодействия с базой данных. DAO инкапсулирует логику доступа к данным, предоставляя методы для CRUD-операций (создание, чтение, обновление, удаление).
+- В Hibernate DAO помогает организовать код, разделяя бизнес-логику и логику доступа к данным.
+
+Пример:
+
+```java
+public class UserDao {
+    private SessionFactory sessionFactory;
+
+    public UserDao(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
+    public User findById(Long id) {
+        try (Session session = sessionFactory.openSession()) {
+            return session.get(User.class, id);
+        }
+    }
+
+    public void save(User user) {
+        try (Session session = sessionFactory.openSession()) {
+            Transaction tx = session.beginTransaction();
+            session.save(user);
+            tx.commit();
+        }
+    }
+}
+```
+
+## 2. **Proxy (Заместитель)**
+
+- Hibernate использует **Proxy** для ленивой загрузки (Lazy Loading). Это позволяет отложить загрузку связанных сущностей до тех пор, пока они действительно не потребуются.
+- Прокси-класс заменяет реальные объекты и подгружает их данные только при первом доступе к полям.
+
+Пример:
+
+```java
+@Entity
+public class User {
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+    private Set<Order> orders;
+}
+```
+
+Здесь коллекция `orders` будет загружена только при первом обращении к ней.
+
+## 3. **Factory Method (Фабричный метод)**
+
+- В Hibernate фабричный метод используется для создания объектов `SessionFactory` и `Session`. `SessionFactory` — это фабрика для создания `Session`, которая управляет транзакциями и доступом к базе данных.
+
+Пример создания `SessionFactory`:
+
+```java
+SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
+Session session = sessionFactory.openSession();
+```
+
+## 4. **Singleton (Одиночка)**
+
+- В большинстве случаев `SessionFactory` создается как **Singleton**. Это связано с тем, что `SessionFactory` является тяжелым объектом, и для всего приложения используется один его экземпляр.
+
+Пример:
+
+```java
+public class HibernateUtil {
+    private static SessionFactory sessionFactory;
+
+    static {
+        sessionFactory = new Configuration().configure().buildSessionFactory();
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+}
+```
+
+## 5. **Template Method (Шаблонный метод)**
+
+- Hibernate использует **Template Method** в классе `HibernateTemplate`, который является частью Spring ORM. Этот шаблонный класс управляет общими задачами для работы с сессиями и транзакциями, предоставляя разработчикам возможность сосредоточиться только на бизнес-логике.
+
+Пример использования `HibernateTemplate`:
+
+```java
+public class UserDao {
+    private HibernateTemplate hibernateTemplate;
+
+    public void save(User user) {
+        hibernateTemplate.save(user);
+    }
+}
+```
+
+## 6. **Decorator (Декоратор)**
+
+- В Hibernate используется **Decorator** для добавления кэширования на уровне второго уровня (second-level caching). Декоратор оборачивает сущности дополнительными слоями, такими как кэш, обеспечивая оптимизацию при повторных обращениях к одной и той же информации.
+
+Пример конфигурации кэша второго уровня:
+
+```xml
+<property name="hibernate.cache.use_second_level_cache" value="true"/>
+<property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.EhCacheRegionFactory"/>
+```
+
+## 7. **Strategy (Стратегия)**
+
+- Паттерн **Strategy** используется в Hibernate для выбора стратегии маппинга, например, наследования классов. В зависимости от конкретного сценария, можно выбрать одну из трех стратегий наследования: `SINGLE_TABLE`, `JOINED`, `TABLE_PER_CLASS`.
+
+Пример:
+
+```java
+@Entity
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Employee {
+    // поля...
+}
+
+@Entity
+public class FullTimeEmployee extends Employee {
+    // поля...
+}
+```
+
+## 8. **Observer (Наблюдатель)**
+
+- В Hibernate паттерн **Observer** используется для управления жизненным циклом сущностей с помощью событий (events). Hibernate поддерживает событие для отслеживания операций, таких как сохранение, обновление, удаление и загрузка сущностей.
+
+Пример слушателя событий:
+
+```java
+public class MyEventListener implements PostLoadEventListener {
+    @Override
+    public void onPostLoad(PostLoadEvent event) {
+        System.out.println("Entity loaded: " + event.getEntity());
+    }
+}
+```
+
+## 9. **Composite (Компоновщик)**
+
+- Hibernate использует **Composite** для работы с составными ключами и составными объектами. Например, когда сущность содержит несколько полей, которые вместе формируют уникальный идентификатор (составной ключ), Hibernate применяет этот паттерн для управления такими сущностями.
+
+Пример составного ключа:
+
+```java
+@Embeddable
+public class EmployeeId implements Serializable {
+    private String departmentId;
+    private Long employeeNumber;
+}
+
+@Entity
+public class Employee {
+    @EmbeddedId
+    private EmployeeId id;
+}
+```
+
+## 10. **Command (Команда)**
+
+- В Hibernate паттерн **Command** используется в `HQL` и `Criteria API`. Он позволяет абстрагировать выполнение команд (например, запросов и обновлений данных) через объектный API, предоставляя единый интерфейс для работы с базой данных.
+
+Пример:
+
+```java
+CriteriaBuilder cb = session.getCriteriaBuilder();
+CriteriaQuery<User> query = cb.createQuery(User.class);
+Root<User> root = query.from(User.class);
+query.select(root).where(cb.equal(root.get("name"), "John"));
+List<User> users = session.createQuery(query).getResultList();
+```
+
+### Заключение
+
+Hibernate активно использует различные шаблоны проектирования для обеспечения гибкости, производительности и удобства работы с объектами и базами данных. Эти паттерны помогают структурировать код и обеспечить легкость его расширения и поддержки.
