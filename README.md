@@ -1,2 +1,2 @@
 # java-learning
-MDs with questions and answers for Java interview
+MDs with questions and answers for Java learning
